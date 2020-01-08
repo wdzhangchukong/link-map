@@ -63,9 +63,8 @@ LinkMap.prototype = {
 	},
 
 	_formatSize: function(size) {
-		if (size > 1024 * 1024) return (size/(1024*1024)).toFixed(2) + "MB"
-		if (size > 1024) return (size/1024).toFixed(2) + "KB"
-		return size + "B"
+		// 统一单位为 kb
+		return (size/1024).toFixed(2);
 	},
 
 	statLibs: function(h) {
@@ -117,14 +116,15 @@ LinkMap.prototype = {
 	}
 }
 
-if (!process.argv[2]) {
-	console.log('usage: node linkmap.js filepath -hl')
+if (!process.argv[2] || !process.argv[3]) {
+	console.log('usage: node linkmap.js filepath outputFile -hl')
 	console.log('-h: format size')
 	console.log('-l: stat libs')
 	return
 }
-var isStatLib, isFomatSize
-var opts = process.argv[3];
+var isStatLib, isFomatSize;
+var outputFile = process.argv[3];
+var opts = process.argv[4];
 if (opts && opts[0] == '-') {
 	if (opts.indexOf('h') > -1) isFomatSize = true
 	if (opts.indexOf('l') > -1) isStatLib = true
@@ -133,8 +133,10 @@ if (opts && opts[0] == '-') {
 var linkmap = new LinkMap(process.argv[2])
 linkmap.start(function(){
 	var ret = isStatLib ? linkmap.statLibs(isFomatSize) 
-	                    : linkmap.statFiles(isFomatSize)
+						: linkmap.statFiles(isFomatSize);
+	var result = "";
 	for (var i in ret) {
-		console.log(ret[i].name + '\t' + ret[i].size)
+		result += ret[i].name + ',' + ret[i].size + '\n';
 	}
-})
+	fs.writeFileSync(outputFile, result);
+});
